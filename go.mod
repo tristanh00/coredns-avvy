@@ -1,4 +1,4 @@
-module github.com/wealdtech/coredns-ens
+module github.com/tristanh00/coredns-avvy
 
 go 1.12
 
