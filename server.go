@@ -1,8 +1,7 @@
-package ens
+package avvy
 
 import (
 	"strings"
-
 	"github.com/coredns/coredns/request"
 	"github.com/miekg/dns"
 )
