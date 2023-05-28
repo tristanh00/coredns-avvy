@@ -16,7 +16,7 @@ echo "Patching plugin config..."
 ed plugin.cfg <<EOED
 /rewrite:rewrite
 a
-ens:github.com/wealdtech/coredns-ens
+avvy:github.com/wealdtech/coredns-avvy
 .
 w
 q
