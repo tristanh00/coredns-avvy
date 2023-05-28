@@ -5,7 +5,7 @@ import (
 	"github.com/coredns/caddy"
 )
 
-func TestENSParse(t *testing.T) {
+func TestAvvyParse(t *testing.T) {
 	tests := []struct {
 		key                string
 		inputFileRules     string
