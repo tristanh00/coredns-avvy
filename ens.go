@@ -1,5 +1,5 @@
 // Package ens implements a plugin that returns information held in the Ethereum Name Service.
-package ens
+package avvy
 
 import (
 	"bytes"
@@ -8,21 +8,19 @@ import (
 	"fmt"
 	"strings"
 	"time"
-
 	"github.com/coredns/coredns/plugin"
 	"github.com/coredns/coredns/request"
 	"github.com/ethereum/go-ethereum/ethclient"
 	lru "github.com/hashicorp/golang-lru"
 	"github.com/labstack/gommon/log"
 	ens "github.com/wealdtech/go-ens/v3"
-
 	"github.com/miekg/dns"
 )
 
 var emptyContentHash = []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
 
-// ENS is a plugin that returns information held in the Ethereum Name Service.
-type ENS struct {
+// Avvy is a plugin that returns information held in the Ethereum Name Service.
+type Avvy struct {
 	Next               plugin.Handler
 	Client             *ethclient.Client
 	Registry           *ens.Registry
@@ -32,8 +30,8 @@ type ENS struct {
 }
 
 // IsAuthoritative checks if the ENS plugin is authoritative for a given domain
-func (e ENS) IsAuthoritative(domain string) bool {
-	controllerAddress, err := e.Registry.Owner(strings.TrimSuffix(domain, "."))
+func (a Avvy) IsAuthoritative(domain string) bool {
+	controllerAddress, err := a.Registry.Owner(strings.TrimSuffix(domain, "."))
 	if err != nil {
 		return false
 	}
@@ -43,9 +41,9 @@ func (e ENS) IsAuthoritative(domain string) bool {
 
 // HasRecords checks if there are any records for a specific domain and name.
 // This is used for wildcard eligibility
-func (e ENS) HasRecords(domain string, name string) (bool, error) {
+func (a Avvy) HasRecords(domain string, name string) (bool, error) {
 	// See if this has a contenthash record.
-	resolver, err := e.getResolver(domain)
+	resolver, err := a.getResolver(domain)
 	if err != nil {
 		return false, err
 	}
@@ -55,7 +53,7 @@ func (e ENS) HasRecords(domain string, name string) (bool, error) {
 	}
 
 	// See if this has DNS records.
-	dnsResolver, err := e.getDNSResolver(strings.TrimSuffix(domain, "."))
+	dnsResolver, err := a.getDNSResolver(strings.TrimSuffix(domain, "."))
 	if err != nil {
 		return false, err
 	}
@@ -63,8 +61,8 @@ func (e ENS) HasRecords(domain string, name string) (bool, error) {
 }
 
 // Query queries a given domain/name/resource combination
-func (e ENS) Query(domain string, name string, qtype uint16, do bool) ([]dns.RR, error) {
-	log.Debugf("request type %d for name %s in domain %v", qtype, name, domain)
+func (a Avvy) Query(domain string, name string, qtype uint16, do bool) ([]dns.RR, error) {
+	log.Debugf("Request type %d for name %s in domain %v", qtype, name, domain)
 
 	results := make([]dns.RR, 0)
 
@@ -77,25 +75,25 @@ func (e ENS) Query(domain string, name string, qtype uint16, do bool) ([]dns.RR,
 		qtype == dns.TypeTXT ||
 		qtype == dns.TypeA ||
 		qtype == dns.TypeAAAA {
-		contentHash, err = e.obtainContentHash(name, domain)
+		contentHash, err = a.obtainContentHash(name, domain)
 		hasContentHash = err == nil && bytes.Compare(contentHash, emptyContentHash) > 0
 	}
 	if hasContentHash {
 		switch qtype {
 		case dns.TypeSOA:
-			results, err = e.handleSOA(name, domain, contentHash)
+			results, err = a.handleSOA(name, domain, contentHash)
 		case dns.TypeNS:
-			results, err = e.handleNS(name, domain, contentHash)
+			results, err = a.handleNS(name, domain, contentHash)
 		case dns.TypeTXT:
-			results, err = e.handleTXT(name, domain, contentHash)
+			results, err = a.handleTXT(name, domain, contentHash)
 		case dns.TypeA:
-			results, err = e.handleA(name, domain, contentHash)
+			results, err = a.handleA(name, domain, contentHash)
 		case dns.TypeAAAA:
-			results, err = e.handleAAAA(name, domain, contentHash)
+			results, err = a.handleAAAA(name, domain, contentHash)
 		}
 	} else {
-		ethDomain := strings.TrimSuffix(domain, ".")
-		resolver, err := e.getDNSResolver(ethDomain)
+		avaxDomain := strings.TrimSuffix(domain, ".")
+		resolver, err := a.getDNSResolver(avaxDomain)
 		if err != nil {
 			return results, nil
 		}
@@ -118,14 +116,14 @@ func (e ENS) Query(domain string, name string, qtype uint16, do bool) ([]dns.RR,
 	return results, nil
 }
 
-func (e ENS) handleSOA(name string, domain string, contentHash []byte) ([]dns.RR, error) {
+func (a Avvy) handleSOA(name string, domain string, contentHash []byte) ([]dns.RR, error) {
 	results := make([]dns.RR, 0)
-	if len(e.EthLinkNameServers) > 0 {
+	if len(a.EthLinkNameServers) > 0 {
 		// Create a synthetic SOA record
 		now := time.Now()
 		ser := ((now.Hour()*3600 + now.Minute()) * 100) / 86400
 		dateStr := fmt.Sprintf("%04d%02d%02d%02d", now.Year(), now.Month(), now.Day(), ser)
-		result, err := dns.NewRR(fmt.Sprintf("%s 10800 IN SOA %s hostmaster.%s %s 3600 600 1209600 300", e.EthLinkNameServers[0], name, name, dateStr))
+		result, err := dns.NewRR(fmt.Sprintf("%s 10800 IN SOA %s hostmaster.%s %s 3600 600 1209600 300", a.EthLinkNameServers[0], name, name, dateStr))
 		if err != nil {
 			return results, err
 		}
@@ -134,9 +132,9 @@ func (e ENS) handleSOA(name string, domain string, contentHash []byte) ([]dns.RR
 	return results, nil
 }
 
-func (e ENS) handleNS(name string, domain string, contentHash []byte) ([]dns.RR, error) {
+func (a Avvy) handleNS(name string, domain string, contentHash []byte) ([]dns.RR, error) {
 	results := make([]dns.RR, 0)
-	for _, nameserver := range e.EthLinkNameServers {
+	for _, nameserver := range a.EthLinkNameServers {
 		result, err := dns.NewRR(fmt.Sprintf("%s 3600 IN NS %s", domain, nameserver))
 		if err != nil {
 			return results, err
@@ -147,9 +145,9 @@ func (e ENS) handleNS(name string, domain string, contentHash []byte) ([]dns.RR,
 	return results, nil
 }
 
-func (e ENS) handleTXT(name string, domain string, contentHash []byte) ([]dns.RR, error) {
+func (a Avvy) handleTXT(name string, domain string, contentHash []byte) ([]dns.RR, error) {
 	results := make([]dns.RR, 0)
-	txtRRSet, err := e.obtainTXTRRSet(name, domain)
+	txtRRSet, err := a.obtainTXTRRSet(name, domain)
 	if err == nil && len(txtRRSet) != 0 {
 		// We have a TXT rrset; use it
 		offset := 0
@@ -163,10 +161,10 @@ func (e ENS) handleTXT(name string, domain string, contentHash []byte) ([]dns.RR
 	}
 
 	if isRealOnChainDomain(name, domain) {
-		ethDomain := strings.TrimSuffix(domain, ".")
-		resolver, err := e.getResolver(ethDomain)
+		avaxDomain := strings.TrimSuffix(domain, ".")
+		resolver, err := a.getResolver(avaxDomain)
 		if err != nil {
-			log.Warnf("error obtaining resolver for %s: %v", ethDomain, err)
+			log.Warnf("error obtaining resolver for %s: %v", avaxDomain, err)
 			return results, nil
 		}
 
@@ -218,10 +216,10 @@ func (e ENS) handleTXT(name string, domain string, contentHash []byte) ([]dns.RR
 	return results, nil
 }
 
-func (e ENS) handleA(name string, domain string, contentHash []byte) ([]dns.RR, error) {
+func (a Avvy) handleA(name string, domain string, contentHash []byte) ([]dns.RR, error) {
 	results := make([]dns.RR, 0)
 
-	aRRSet, err := e.obtainARRSet(name, domain)
+	aRRSet, err := a.obtainARRSet(name, domain)
 	if err == nil && len(aRRSet) != 0 {
 		// We have an A rrset; use it
 		offset := 0
@@ -234,7 +232,7 @@ func (e ENS) handleA(name string, domain string, contentHash []byte) ([]dns.RR, 
 		}
 	} else {
 		// We have a content hash but no A record; use the default
-		for i := range e.IPFSGatewayAs {
+		for i := range a.IPFSGatewayAs {
 			result, err := dns.NewRR(fmt.Sprintf("%s 3600 IN A %s", name, e.IPFSGatewayAs[i]))
 			if err != nil {
 				return results, err
@@ -246,10 +244,10 @@ func (e ENS) handleA(name string, domain string, contentHash []byte) ([]dns.RR, 
 	return results, nil
 }
 
-func (e ENS) handleAAAA(name string, domain string, contentHash []byte) ([]dns.RR, error) {
+func (a Avvy) handleAAAA(name string, domain string, contentHash []byte) ([]dns.RR, error) {
 	results := make([]dns.RR, 0)
 
-	aaaaRRSet, err := e.obtainAAAARRSet(name, domain)
+	aaaaRRSet, err := a.obtainAAAARRSet(name, domain)
 	if err == nil && len(aaaaRRSet) != 0 {
 		// We have an AAAA rrset; use it
 		offset := 0
@@ -262,7 +260,7 @@ func (e ENS) handleAAAA(name string, domain string, contentHash []byte) ([]dns.R
 		}
 	} else {
 		// We have a content hash but no AAAA record; use the default
-		for i := range e.IPFSGatewayAAAAs {
+		for i := range a.IPFSGatewayAAAAs {
 			result, err := dns.NewRR(fmt.Sprintf("%s 3600 IN AAAA %s", name, e.IPFSGatewayAAAAs[i]))
 			if err != nil {
 				log.Warnf("error creating %s AAAA RR: %v", name, err)
@@ -274,7 +272,7 @@ func (e ENS) handleAAAA(name string, domain string, contentHash []byte) ([]dns.R
 }
 
 // ServeDNS implements the plugin.Handler interface.
-func (e ENS) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) (int, error) {
+func (ad Avvy) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) (int, error) {
 	state := request.Request{W: w, Req: r}
 
 	a := new(dns.Msg)
@@ -289,7 +287,7 @@ func (e ENS) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) (in
 		w.WriteMsg(a)
 		return dns.RcodeSuccess, nil
 	case NoData:
-		if e.Next == nil {
+		if ad.Next == nil {
 			state.SizeAndDo(a)
 			w.WriteMsg(a)
 			return dns.RcodeSuccess, nil
@@ -305,9 +303,9 @@ func (e ENS) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) (in
 
 }
 
-func (e ENS) obtainARRSet(name string, domain string) ([]byte, error) {
-	ethDomain := strings.TrimSuffix(domain, ".")
-	resolver, err := e.getDNSResolver(ethDomain)
+func (a Avvy) obtainARRSet(name string, domain string) ([]byte, error) {
+	avaxDomain := strings.TrimSuffix(domain, ".")
+	resolver, err := a.getDNSResolver(avaxDomain)
 	if err != nil {
 		return []byte{}, nil
 	}
@@ -315,9 +313,9 @@ func (e ENS) obtainARRSet(name string, domain string) ([]byte, error) {
 	return resolver.Record(name, dns.TypeA)
 }
 
-func (e ENS) obtainAAAARRSet(name string, domain string) ([]byte, error) {
-	ethDomain := strings.TrimSuffix(domain, ".")
-	resolver, err := e.getDNSResolver(ethDomain)
+func (a Avvy) obtainAAAARRSet(name string, domain string) ([]byte, error) {
+	avaxDomain := strings.TrimSuffix(domain, ".")
+	resolver, err := a.getDNSResolver(avaxDomain)
 	if err != nil {
 		return []byte{}, nil
 	}
@@ -325,9 +323,9 @@ func (e ENS) obtainAAAARRSet(name string, domain string) ([]byte, error) {
 	return resolver.Record(name, dns.TypeAAAA)
 }
 
-func (e ENS) obtainContentHash(name string, domain string) ([]byte, error) {
-	ethDomain := strings.TrimSuffix(domain, ".")
-	resolver, err := e.getResolver(ethDomain)
+func (a Avvy) obtainContentHash(name string, domain string) ([]byte, error) {
+	avaxDomain := strings.TrimSuffix(domain, ".")
+	resolver, err := a.getResolver(avaxDomain)
 	if err != nil {
 		return []byte{}, nil
 	}
@@ -335,9 +333,9 @@ func (e ENS) obtainContentHash(name string, domain string) ([]byte, error) {
 	return resolver.Contenthash()
 }
 
-func (e ENS) obtainTXTRRSet(name string, domain string) ([]byte, error) {
-	ethDomain := strings.TrimSuffix(domain, ".")
-	resolver, err := e.getDNSResolver(ethDomain)
+func (a Avvy) obtainTXTRRSet(name string, domain string) ([]byte, error) {
+	avaxDomain := strings.TrimSuffix(domain, ".")
+	resolver, err := a.getDNSResolver(avaxDomain)
 	if err != nil {
 		return []byte{}, nil
 	}
@@ -346,7 +344,7 @@ func (e ENS) obtainTXTRRSet(name string, domain string) ([]byte, error) {
 }
 
 // Name implements the Handler interface.
-func (e ENS) Name() string { return "ens" }
+func (a Avvy) Name() string { return "avvy" }
 
 // isRealOnChainDomain will return true if the name requested
 // is also the domain, which implies the entry has an on-chain
@@ -363,9 +361,9 @@ func init() {
 	dnsResolverCache, _ = lru.New(16)
 }
 
-func (e *ENS) getDNSResolver(domain string) (*ens.DNSResolver, error) {
+func (a *Avvy) getDNSResolver(domain string) (*avvy.DNSResolver, error) {
 	if !dnsResolverCache.Contains(domain) {
-		resolver, err := ens.NewDNSResolver(e.Client, domain)
+		resolver, err := avvy.NewDNSResolver(a.Client, domain)
 		if err == nil {
 			dnsResolverCache.Add(domain, resolver)
 		} else {
@@ -379,21 +377,21 @@ func (e *ENS) getDNSResolver(domain string) (*ens.DNSResolver, error) {
 	if resolver == nil {
 		return nil, errors.New("no resolver")
 	}
-	return resolver.(*ens.DNSResolver), nil
+	return resolver.(*avvy.DNSResolver), nil
 }
 
-func (e *ENS) newDNSResolver(domain string) (*ens.DNSResolver, error) {
+func (a *Avvy) newDNSResolver(domain string) (*avvy.DNSResolver, error) {
 	// Obtain the resolver address for this domain
-	resolver, err := e.Registry.ResolverAddress(domain)
+	resolver, err := a.Registry.ResolverAddress(domain)
 	if err != nil {
 		return nil, err
 	}
-	return ens.NewDNSResolverAt(e.Client, domain, resolver)
+	return avvy.NewDNSResolverAt(a.Client, domain, resolver)
 }
 
-func (e *ENS) getResolver(domain string) (*ens.Resolver, error) {
+func (a *Avvy) getResolver(domain string) (*avvy.Resolver, error) {
 	if !resolverCache.Contains(domain) {
-		resolver, err := e.newResolver(domain)
+		resolver, err := a.newResolver(domain)
 		if err == nil {
 			resolverCache.Add(domain, resolver)
 		} else {
@@ -407,21 +405,21 @@ func (e *ENS) getResolver(domain string) (*ens.Resolver, error) {
 	if resolver == nil {
 		return nil, errors.New("no resolver")
 	}
-	return resolver.(*ens.Resolver), nil
+	return resolver.(*avvy.Resolver), nil
 }
 
-func (e *ENS) newResolver(domain string) (*ens.Resolver, error) {
+func (a *Avvy) newResolver(domain string) (*avvy.Resolver, error) {
 	// Obtain the resolver address for this domain
-	resolver, err := e.Registry.ResolverAddress(domain)
+	resolver, err := a.Registry.ResolverAddress(domain)
 	if err != nil {
 		return nil, err
 	}
-	return ens.NewResolverAt(e.Client, domain, resolver)
+	return avvy.NewResolverAt(a.Client, domain, resolver)
 }
 
 // Ready returns true if we're ready to serve DNS records i.e. our chain is synced
-func (e ENS) Ready() bool {
-	progress, err := e.Client.SyncProgress(context.Background())
+func (a Avvy) Ready() bool {
+	progress, err := a.Client.SyncProgress(context.Background())
 	if err != nil {
 		return false
 	}
