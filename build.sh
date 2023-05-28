@@ -6,7 +6,7 @@ BUILDDIR=/build
 
 mkdir -p ${BUILDDIR} 2>/dev/null
 cd ${BUILDDIR}
-echo "Cloning coredns repo..."
+echo "Cloning CoreDNS..."
 git clone https://github.com/coredns/coredns.git
 
 cd coredns
@@ -23,21 +23,21 @@ q
 EOED
 
 # Add our module to coredns.
-echo "Patching go modules..."
+echo "Patching GO modules..."
 ed go.mod <<EOED
 a
-replace github.com/wealdtech/coredns-ens => ../../coredns-ens
+replace github.com/tristanh00/coredns-avvy => ../../coredns-avvy
 .
 /^)
 -1
 a
-	github.com/wealdtech/coredns-ens v1.3.1
+	github.com/wealdtech/coredns-avvy v1.0.0
 .
 w
 q
 EOED
 
-go get github.com/wealdtech/coredns-ens@v1.3.1
+go get github.com/tristanh00/coredns-avvy@v1.0.0
 go get
 go mod download
 
