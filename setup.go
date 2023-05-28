@@ -1,8 +1,7 @@
-package ens
+package avvy
 
 import (
 	"strings"
-
 	"github.com/coredns/caddy"
 	"github.com/coredns/coredns/core/dnsserver"
 	"github.com/coredns/coredns/plugin"
@@ -11,27 +10,27 @@ import (
 )
 
 func init() {
-	caddy.RegisterPlugin("ens", caddy.Plugin{
+	caddy.RegisterPlugin("avvy", caddy.Plugin{
 		ServerType: "dns",
-		Action:     setupENS,
+		Action:     setupAvvy,
 	})
 }
 
-func setupENS(c *caddy.Controller) error {
+func setupAvvy(c *caddy.Controller) error {
 	connection, ethLinkNameServers, ipfsGatewayAs, ipfsGatewayAAAAs, err := ensParse(c)
 	if err != nil {
-		return plugin.Error("ens", err)
+		return plugin.Error("avvy", err)
 	}
 
 	client, err := ethclient.Dial(connection)
 	if err != nil {
-		return plugin.Error("ens", err)
+		return plugin.Error("avvy", err)
 	}
 
 	// Obtain the registry contract
 	registry, err := ens.NewRegistry(client)
 	if err != nil {
-		return plugin.Error("ens", err)
+		return plugin.Error("avvy", err)
 	}
 
 	dnsserver.GetConfig(c).AddPlugin(func(next plugin.Handler) plugin.Handler {
