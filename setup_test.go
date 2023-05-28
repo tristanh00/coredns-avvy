@@ -1,8 +1,7 @@
-package ens
+package avvy
 
 import (
 	"testing"
-
 	"github.com/coredns/caddy"
 )
 
@@ -18,7 +17,7 @@ func TestENSParse(t *testing.T) {
 	}{
 		{ // 0
 			".",
-			`ens {
+			`avvy {
 			}`,
 			"Testfile:2 - Error during parsing: no connection",
 			"",
@@ -28,7 +27,7 @@ func TestENSParse(t *testing.T) {
 		},
 		{ // 1
 			".",
-			`ens {
+			`avvy {
 			   connection
 			}`,
 			"Testfile:2 - Error during parsing: invalid connection; no value",
@@ -39,7 +38,7 @@ func TestENSParse(t *testing.T) {
 		},
 		{ // 2
 			".eth.link",
-			`ens {
+			`avvy {
 			  connection /home/test/.ethereum/geth.ipc
 			  ethlinknameservers ns1.ethdns.xyz
 			}`,
@@ -51,7 +50,7 @@ func TestENSParse(t *testing.T) {
 		},
 		{ // 3
 			".",
-			`ens {
+			`avvy {
 			  connection http://localhost:8545/
 			  ethlinknameservers ns1.ethdns.xyz ns2.ethdns.xyz
 			}`,
@@ -63,7 +62,7 @@ func TestENSParse(t *testing.T) {
 		},
 		{ // 4
 			".",
-			`ens {
+			`avvy {
 			  connection http://localhost:8545/
 			  ipfsgatewaya
 			}`,
@@ -75,7 +74,7 @@ func TestENSParse(t *testing.T) {
 		},
 		{ // 5
 			".",
-			`ens {
+			`avvy {
 			  connection http://localhost:8545/
 			  ethlinknameservers ns1.ethdns.xyz ns2.ethdns.xyz
 			  ipfsgatewaya 193.62.81.1
@@ -88,7 +87,7 @@ func TestENSParse(t *testing.T) {
 		},
 		{ // 6
 			".",
-			`ens {
+			`avvy {
 			  connection http://localhost:8545/
 			  ipfsgatewayaaaa
 			}`,
@@ -100,7 +99,7 @@ func TestENSParse(t *testing.T) {
 		},
 		{ // 7
 			".",
-			`ens {
+			`avvy {
 			  connection http://localhost:8545/
 			  ethlinknameservers ns1.ethdns.xyz ns2.ethdns.xyz
 			  ipfsgatewayaaaa fe80::b8fb:325d:fb5a:40e7
@@ -113,7 +112,7 @@ func TestENSParse(t *testing.T) {
 		},
 		{ // 8
 			"tls://.:8053",
-			`ens {
+			`avvy {
 			  connection http://localhost:8545/
 			  ethlinknameservers ns1.ethdns.xyz ns2.ethdns.xyz
 			  ipfsgatewayaaaa fe80::b8fb:325d:fb5a:40e7
@@ -126,7 +125,7 @@ func TestENSParse(t *testing.T) {
 		},
 		{ // 9
 			".:8053",
-			`ens {
+			`avvy {
 			  connection http://localhost:8545/ bad
 			  ipfsgatewayaaaa fe80::b8fb:325d:fb5a:40e7
 			}`,
@@ -138,7 +137,7 @@ func TestENSParse(t *testing.T) {
 		},
 		{ // 10
 			".:8053",
-			`ens {
+			`avvy {
 			  connection http://localhost:8545/
 			  ethlinknameservers ns1.ethdns.xyz ns2.ethdns.xyz
 			  ipfsgatewaya 193.62.81.1 193.62.81.2
@@ -151,7 +150,7 @@ func TestENSParse(t *testing.T) {
 		},
 		{ // 11
 			".:8053",
-			`ens {
+			`avvy {
 			  connection http://localhost:8545/
 			  ethlinknameservers ns1.ethdns.xyz ns2.ethdns.xyz
 			  ipfsgatewayaaaa fe80::b8fb:325d:fb5a:40e7 fe80::b8fb:325d:fb5a:40e8
@@ -164,7 +163,7 @@ func TestENSParse(t *testing.T) {
 		},
 		{ // 12
 			".:8053",
-			`ens {
+			`avvy {
 			  connection http://localhost:8545/
 			  ipfsgatewayaaaa fe80::b8fb:325d:fb5a:40e7 fe80::b8fb:325d:fb5a:40e8
 			  bad
@@ -178,9 +177,9 @@ func TestENSParse(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		c := caddy.NewTestController("ens", test.inputFileRules)
+		c := caddy.NewTestController("avvy", test.inputFileRules)
 		c.Key = test.key
-		connection, ethlinknameservers, ipfsgatewayas, ipfsgatewayaaaas, err := ensParse(c)
+		connection, ethlinknameservers, ipfsgatewayas, ipfsgatewayaaaas, err := avvyParse(c)
 
 		if test.err != "" {
 			if err == nil {
