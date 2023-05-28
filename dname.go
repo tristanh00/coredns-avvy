@@ -1,8 +1,7 @@
-package ens
+package avvy
 
 import (
 	"github.com/coredns/coredns/plugin/pkg/dnsutil"
-
 	"github.com/miekg/dns"
 )
 
