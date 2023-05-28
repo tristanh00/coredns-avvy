@@ -1,24 +1,22 @@
-# coredns-ens
+# coredns-avvy
 
-CoreDNS-ENS is a CoreDNS plugin that resolves DNS information over ENS.  It has two primary purposes:
+CoreDNS-Avvy is a CoreDNS plugin that resolves DNS information over Avalanche Name Server.  It has two primary purposes:
 
-  1. A general-purpose DNS resolver for DNS records stored on the Ethereum blockchain
-  2. A specialised resolver for IPFS content hashes and gatways
+  1. A general-purpose DNS resolver for DNS records stored on the Avalanche blockchain
+  2. A specialised resolver for IPFS content hashes and gateways
 
-Details of the first feature can be found at http://www.wealdtech.com/articles/ethdns-an-ethereum-backend-for-the-domain-name-system/
-
-The second feature provides a mechanism to map DNS domains to ENS domains by removing the relevant suffix, for example the DNS domain `wealdtech.eth.link` maps to the ENS domain `wealdtech.eth`, and returning information for IPFS gateways (if an A or AAAA record is requested) as well as IPFS and content hashes (if a TXT record is requested).  The result of this is that IPFS content can be obtained from any web browser by simply 
+The second feature provides a mechanism to map DNS domains to ENS domains by removing the relevant suffix, for example the DNS domain `tristanh00.eth.link` maps to the ENS domain `tristanh00.eth`, and returning information for IPFS gateways (if an A or AAAA record is requested) as well as IPFS and content hashes (if a TXT record is requested).  The result of this is that IPFS content can be obtained from any web browser by simply 
 
 # Building
 
-The latest build is always available as a docker repository at `wealdtech/coredns-ens`.  If you want to build a standalone copy of CoreDNS with this plugin enabled run the `build-standalone.sh` script, which should work on most unix-like systems.
+The latest build is always available as a docker repository at `tristanh00/coredns-avvy`.  If you want to build a standalone copy of CoreDNS with this plugin enabled run the `build-standalone.sh` script, which should work on most unix-like systems.
 
 # Corefile
 
 The plugin has a number of configuration options.  An example annotated Corefile is shown below:
 
 ```
-# This section enables DNS lookups for all domains on ENS
+# This section enables DNS lookups for all domains on Avvy
 . {
   rewrite stop {
     # This rewrites any requests for *.eth.link domains to *.eth internally
@@ -73,6 +71,6 @@ Running CoreDNS standalone is simply a case of starting the binary.  See the Cor
 
 Running CoreDNS with Docker requires running the image created in the `Building` section.  A sample command-line might be:
 
-    docker run -p 53:53/udp --volume=/home/coredns:/etc/coredns wealdtech/coredns-ens:latest
+    docker run -p 53:53/udp --volume=/home/coredns:/etc/coredns tristanh00/coredns-avvy:latest
 
 where `/home/coredns` is the directory on the server that contains the Corefile and certificates.
