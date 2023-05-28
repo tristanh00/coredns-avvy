@@ -1,8 +1,7 @@
-package ens
+package avvy
 
 import (
 	"strings"
-
 	"github.com/miekg/dns"
 )
 
@@ -27,6 +26,5 @@ func replaceWithAsteriskLabel(qname string) (wildcard string) {
 	if shot {
 		return ""
 	}
-
 	return "*." + qname[i:]
 }
