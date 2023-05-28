@@ -47,7 +47,7 @@ func setupAvvy(c *caddy.Controller) error {
 	return nil
 }
 
-func ensParse(c *caddy.Controller) (string, []string, []string, []string, error) {
+func avvyParse(c *caddy.Controller) (string, []string, []string, []string, error) {
 	var connection string
 	ethLinkNameServers := make([]string, 0)
 	ipfsGatewayAs := make([]string, 0)
