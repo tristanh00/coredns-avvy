@@ -19,7 +19,7 @@ import (
 
 var emptyContentHash = []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
 
-// Avvy is a plugin that returns information held in the Ethereum Name Service.
+// Avvy is a plugin that returns information held in the Avalanche Name Service.
 type Avvy struct {
 	Next               plugin.Handler
 	Client             *ethclient.Client
@@ -143,13 +143,13 @@ func (a Avvy) handleTXT(name string, domain string, contentHash []byte) ([]dns.R
 
 	if isRealOnChainDomain(name, domain) {
 		avaxDomain := strings.TrimSuffix(domain, ".")
-		resolver, err := a.getResolver(avaxDomain)
+		hash, err := a.NameHash(avaxDomain)
 		if err != nil {
 			log.Warnf("error obtaining resolver for %s: %v", avaxDomain, err)
 			return results, nil
 		}
 
-		address, err := resolver.Address()
+		address, err := a.getResolver(hash, hash)
 		if err != nil {
 			if err.Error() != "abi: unmarshalling empty output" {
 				return results, err
