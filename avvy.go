@@ -13,7 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	lru "github.com/hashicorp/golang-lru"
 	"github.com/labstack/gommon/log"
-	ens "github.com/wealdtech/go-ens/v3"
+	avvy "github.com/avvydomains/golang-client"
 	"github.com/miekg/dns"
 )
 
@@ -23,20 +23,20 @@ var emptyContentHash = []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x
 type Avvy struct {
 	Next               plugin.Handler
 	Client             *ethclient.Client
-	Registry           *ens.Registry
+	Registry           *avvy.Registry
 	EthLinkNameServers []string
 	IPFSGatewayAs      []string
 	IPFSGatewayAAAAs   []string
 }
 
-// IsAuthoritative checks if the ENS plugin is authoritative for a given domain
+// IsAuthoritative checks if the Avvy plugin is authoritative for a given domain
 func (a Avvy) IsAuthoritative(domain string) bool {
 	controllerAddress, err := a.Registry.Owner(strings.TrimSuffix(domain, "."))
 	if err != nil {
 		return false
 	}
 
-	return controllerAddress != ens.UnknownAddress
+	return controllerAddress != avvy.UnknownAddress
 }
 
 // HasRecords checks if there are any records for a specific domain and name.
@@ -176,7 +176,7 @@ func (a Avvy) handleTXT(name string, domain string, contentHash []byte) ([]dns.R
 			return results, nil
 		}
 
-		if address != ens.UnknownAddress {
+		if address != avvy.UnknownAddress {
 			result, err := dns.NewRR(fmt.Sprintf("%s 3600 IN TXT \"a=%s\"", name, address.Hex()))
 			if err != nil {
 				return results, err
@@ -191,7 +191,7 @@ func (a Avvy) handleTXT(name string, domain string, contentHash []byte) ([]dns.R
 		results = append(results, result)
 
 		// Also provide dnslink for compatibility with older IPFS gateways
-		contentHashStr, err := ens.ContenthashToString(contentHash)
+		contentHashStr, err := avvy.ContenthashToString(contentHash)
 		if err != nil {
 			return results, err
 		}
@@ -202,7 +202,7 @@ func (a Avvy) handleTXT(name string, domain string, contentHash []byte) ([]dns.R
 		results = append(results, result)
 	} else if isRealOnChainDomain(strings.TrimPrefix(name, "_dnslink."), domain) {
 		// This is a request to _dnslink.<domain>, return the DNS link record.
-		contentHashStr, err := ens.ContenthashToString(contentHash)
+		contentHashStr, err := avvy.ContenthashToString(contentHash)
 		if err != nil {
 			return results, err
 		}
