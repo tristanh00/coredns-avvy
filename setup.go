@@ -6,7 +6,7 @@ import (
 	"github.com/coredns/coredns/core/dnsserver"
 	"github.com/coredns/coredns/plugin"
 	"github.com/ethereum/go-ethereum/ethclient"
-	ens "github.com/wealdtech/go-ens/v3"
+	avvy "github.com/avvydomains/golang-client"
 )
 
 func init() {
@@ -17,7 +17,7 @@ func init() {
 }
 
 func setupAvvy(c *caddy.Controller) error {
-	connection, ethLinkNameServers, ipfsGatewayAs, ipfsGatewayAAAAs, err := ensParse(c)
+	connection, ethLinkNameServers, ipfsGatewayAs, ipfsGatewayAAAAs, err := avvyParse(c)
 	if err != nil {
 		return plugin.Error("avvy", err)
 	}
@@ -28,13 +28,13 @@ func setupAvvy(c *caddy.Controller) error {
 	}
 
 	// Obtain the registry contract
-	registry, err := ens.NewRegistry(client)
+	registry, err := avvy.NewRegistry(client)
 	if err != nil {
 		return plugin.Error("avvy", err)
 	}
 
 	dnsserver.GetConfig(c).AddPlugin(func(next plugin.Handler) plugin.Handler {
-		return ENS{
+		return Avvy{
 			Next:               next,
 			Client:             client,
 			EthLinkNameServers: ethLinkNameServers,
