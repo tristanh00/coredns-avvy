@@ -43,7 +43,7 @@ func (a Avvy) IsAuthoritative(domain string) bool {
 // This is used for wildcard eligibility
 func (a Avvy) HasRecords(domain string, name string) (bool, error) {
 	// See if this has a contenthash record.
-	resolver, err := a.getResolver(domain)
+	resolver, err := a.ResolveStandard(domain)
 	if err != nil {
 		return false, err
 	}
