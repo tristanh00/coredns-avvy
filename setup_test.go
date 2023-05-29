@@ -11,7 +11,6 @@ func TestAvvyParse(t *testing.T) {
 		inputFileRules     string
 		err                string
 		connection         string
-		ethlinknameservers []string
 		ipfsgatewayas      []string
 		ipfsgatewayaaaas   []string
 	}{
@@ -40,7 +39,6 @@ func TestAvvyParse(t *testing.T) {
 			".eth.link",
 			`avvy {
 			  connection /home/test/.ethereum/geth.ipc
-			  ethlinknameservers ns1.ethdns.xyz
 			}`,
 			"",
 			"/home/test/.ethereum/geth.ipc",
@@ -52,7 +50,6 @@ func TestAvvyParse(t *testing.T) {
 			".",
 			`avvy {
 			  connection http://localhost:8545/
-			  ethlinknameservers ns1.ethdns.xyz ns2.ethdns.xyz
 			}`,
 			"",
 			"http://localhost:8545/",
@@ -76,7 +73,6 @@ func TestAvvyParse(t *testing.T) {
 			".",
 			`avvy {
 			  connection http://localhost:8545/
-			  ethlinknameservers ns1.ethdns.xyz ns2.ethdns.xyz
 			  ipfsgatewaya 193.62.81.1
 			}`,
 			"",
@@ -101,7 +97,6 @@ func TestAvvyParse(t *testing.T) {
 			".",
 			`avvy {
 			  connection http://localhost:8545/
-			  ethlinknameservers ns1.ethdns.xyz ns2.ethdns.xyz
 			  ipfsgatewayaaaa fe80::b8fb:325d:fb5a:40e7
 			}`,
 			"",
@@ -114,7 +109,6 @@ func TestAvvyParse(t *testing.T) {
 			"tls://.:8053",
 			`avvy {
 			  connection http://localhost:8545/
-			  ethlinknameservers ns1.ethdns.xyz ns2.ethdns.xyz
 			  ipfsgatewayaaaa fe80::b8fb:325d:fb5a:40e7
 			}`,
 			"",
@@ -139,7 +133,6 @@ func TestAvvyParse(t *testing.T) {
 			".:8053",
 			`avvy {
 			  connection http://localhost:8545/
-			  ethlinknameservers ns1.ethdns.xyz ns2.ethdns.xyz
 			  ipfsgatewaya 193.62.81.1 193.62.81.2
 			}`,
 			"",
@@ -152,7 +145,6 @@ func TestAvvyParse(t *testing.T) {
 			".:8053",
 			`avvy {
 			  connection http://localhost:8545/
-			  ethlinknameservers ns1.ethdns.xyz ns2.ethdns.xyz
 			  ipfsgatewayaaaa fe80::b8fb:325d:fb5a:40e7 fe80::b8fb:325d:fb5a:40e8
 			}`,
 			"",
@@ -179,7 +171,7 @@ func TestAvvyParse(t *testing.T) {
 	for i, test := range tests {
 		c := caddy.NewTestController("avvy", test.inputFileRules)
 		c.Key = test.key
-		connection, ethlinknameservers, ipfsgatewayas, ipfsgatewayaaaas, err := avvyParse(c)
+		connection, ipfsgatewayas, ipfsgatewayaaaas, err := avvyParse(c)
 
 		if test.err != "" {
 			if err == nil {
@@ -194,16 +186,6 @@ func TestAvvyParse(t *testing.T) {
 			} else {
 				if test.connection != "" && connection != test.connection {
 					t.Fatalf("Test %d connection expected %v, got %v", i, test.connection, connection)
-				}
-				if test.ethlinknameservers != nil {
-					if len(ethlinknameservers) != len(test.ethlinknameservers) {
-						t.Fatalf("Test %d ethlinknameservers expected %v entries, got %v", i, len(test.ethlinknameservers), len(ethlinknameservers))
-					}
-					for j := range test.ethlinknameservers {
-						if ethlinknameservers[j] != test.ethlinknameservers[j] {
-							t.Fatalf("Test %d ethlinknameservers expected %v, got %v", i, test.ethlinknameservers[j], ethlinknameservers[j])
-						}
-					}
 				}
 				if test.ipfsgatewayas != nil {
 					if len(ipfsgatewayas) != len(test.ipfsgatewayas) {

@@ -17,7 +17,7 @@ func init() {
 }
 
 func setupAvvy(c *caddy.Controller) error {
-	connection, ethLinkNameServers, ipfsGatewayAs, ipfsGatewayAAAAs, err := avvyParse(c)
+	connection, ipfsGatewayAs, ipfsGatewayAAAAs, err := avvyParse(c)
 	if err != nil {
 		return plugin.Error("avvy", err)
 	}
@@ -37,7 +37,6 @@ func setupAvvy(c *caddy.Controller) error {
 		return Avvy{
 			Next:               next,
 			Client:             client,
-			EthLinkNameServers: ethLinkNameServers,
 			Registry:           registry,
 			IPFSGatewayAs:      ipfsGatewayAs,
 			IPFSGatewayAAAAs:   ipfsGatewayAAAAs,
@@ -49,7 +48,6 @@ func setupAvvy(c *caddy.Controller) error {
 
 func avvyParse(c *caddy.Controller) (string, []string, []string, []string, error) {
 	var connection string
-	ethLinkNameServers := make([]string, 0)
 	ipfsGatewayAs := make([]string, 0)
 	ipfsGatewayAAAAs := make([]string, 0)
 
@@ -65,13 +63,6 @@ func avvyParse(c *caddy.Controller) (string, []string, []string, []string, error
 				return "", nil, nil, nil, c.Errf("invalid connection; multiple values")
 			}
 			connection = args[0]
-		case "ethlinknameservers":
-			args := c.RemainingArgs()
-			if len(args) == 0 {
-				return "", nil, nil, nil, c.Errf("invalid ethlinknameservers; no value")
-			}
-			ethLinkNameServers = make([]string, len(args))
-			copy(ethLinkNameServers, args)
 		case "ipfsgatewaya":
 			args := c.RemainingArgs()
 			if len(args) == 0 {
@@ -93,13 +84,5 @@ func avvyParse(c *caddy.Controller) (string, []string, []string, []string, error
 	if connection == "" {
 		return "", nil, nil, nil, c.Errf("no connection")
 	}
-	if len(ethLinkNameServers) == 0 {
-		return "", nil, nil, nil, c.Errf("no ethlinknameservers")
-	}
-	for i := range ethLinkNameServers {
-		if !strings.HasSuffix(ethLinkNameServers[i], ".") {
-			ethLinkNameServers[i] = ethLinkNameServers[i] + "."
-		}
-	}
-	return connection, ethLinkNameServers, ipfsGatewayAs, ipfsGatewayAAAAs, nil
+	return connection, ipfsGatewayAs, ipfsGatewayAAAAs, nil
 }

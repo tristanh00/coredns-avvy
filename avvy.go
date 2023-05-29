@@ -24,7 +24,6 @@ type Avvy struct {
 	Next               plugin.Handler
 	Client             *ethclient.Client
 	Registry           *avvy.Registry
-	EthLinkNameServers []string
 	IPFSGatewayAs      []string
 	IPFSGatewayAAAAs   []string
 }
@@ -118,29 +117,11 @@ func (a Avvy) Query(domain string, name string, qtype uint16, do bool) ([]dns.RR
 
 func (a Avvy) handleSOA(name string, domain string, contentHash []byte) ([]dns.RR, error) {
 	results := make([]dns.RR, 0)
-	if len(a.EthLinkNameServers) > 0 {
-		// Create a synthetic SOA record
-		now := time.Now()
-		ser := ((now.Hour()*3600 + now.Minute()) * 100) / 86400
-		dateStr := fmt.Sprintf("%04d%02d%02d%02d", now.Year(), now.Month(), now.Day(), ser)
-		result, err := dns.NewRR(fmt.Sprintf("%s 10800 IN SOA %s hostmaster.%s %s 3600 600 1209600 300", a.EthLinkNameServers[0], name, name, dateStr))
-		if err != nil {
-			return results, err
-		}
-		results = append(results, result)
-	}
 	return results, nil
 }
 
 func (a Avvy) handleNS(name string, domain string, contentHash []byte) ([]dns.RR, error) {
 	results := make([]dns.RR, 0)
-	for _, nameserver := range a.EthLinkNameServers {
-		result, err := dns.NewRR(fmt.Sprintf("%s 3600 IN NS %s", domain, nameserver))
-		if err != nil {
-			return results, err
-		}
-		results = append(results, result)
-	}
 
 	return results, nil
 }

@@ -24,18 +24,13 @@ The plugin has a number of configuration options.  An example annotated Corefile
     name regex (.*)\.eth\.link {1}.eth
     answer name (.*)\.eth {1}.eth.link
   }
-  ens {
+  avvy {
     # connection is the connection to an Ethereum node.  It is *highly*
     # recommended that a local node is used, as remote connections can
     # cause DNS requests to time out.
     # This can be either a path to an IPC socket or a URL to a JSON-RPC
     # endpoint.
     connection /home/ethereum/.ethereum/geth.ipc
-
-    # ethlinknameservers are the names of the nameservers that serve
-    # EthLink domains.  This will usually be the name of this server,
-    # plus potentially one or more others.
-    ethlinknameservers ns1.ethdns.xyz ns2.ethdns.xyz
 
     # ipfsgatewaya is the address of an ENS-enabled IPFS gateway.
     # This value is returned when a request for an A record of an Ethlink
