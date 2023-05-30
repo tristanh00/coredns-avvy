@@ -11,6 +11,7 @@ import (
 	"github.com/coredns/coredns/plugin"
 	"github.com/coredns/coredns/request"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/common"
 	lru "github.com/hashicorp/golang-lru"
 	"github.com/labstack/gommon/log"
 	avvy "github.com/avvydomains/golang-client"
@@ -30,12 +31,17 @@ type Avvy struct {
 
 // IsAuthoritative checks if the Avvy plugin is authoritative for a given domain
 func (a Avvy) IsAuthoritative(domain string) bool {
-	controllerAddress, err := a.Registry.Owner(strings.TrimSuffix(domain, "."))
-	if err != nil {
-		return false
-	}
+	domain, hash := a.Resolve(strings.TrimSuffix(domain, "."))
+    if a.IsExpired(hash) {
+        return  false
+    }
 
-	return controllerAddress != avvy.UnknownAddress
+    controllerAddress, err := a.GetResolver(domain, hash)
+    if err != nil {
+        return false
+    }
+
+	return controllerAddress != common.HexToAddress("00")
 }
 
 // HasRecords checks if there are any records for a specific domain and name.
@@ -157,7 +163,7 @@ func (a Avvy) handleTXT(name string, domain string, contentHash []byte) ([]dns.R
 			return results, nil
 		}
 
-		if address != avvy.UnknownAddress {
+		if address != common.HexToAddress("00") {
 			result, err := dns.NewRR(fmt.Sprintf("%s 3600 IN TXT \"a=%s\"", name, address.Hex()))
 			if err != nil {
 				return results, err

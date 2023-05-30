@@ -2,6 +2,7 @@ package avvy
 
 import (
 	"strings"
+
 	"github.com/coredns/coredns/request"
 	"github.com/miekg/dns"
 )
@@ -35,22 +36,6 @@ type Server interface {
 	// IsAuthoritative returns true if this server is authoritative for the
 	// supplied domain
 	IsAuthoritative(qdomain string) bool
-}
-
-// Obtain the lowest domain for which we are authoritative
-func lowestAuthoritativeDomain(server Server, name string) string {
-	parts := strings.Split(name, ".")
-	var authoritativeDomain string
-	testDomain := ""
-	// Iterate backwards. Skip the last part, as it's always empty
-	// (domains are dot-terminated).
-	for i := len(parts) - 2; i >= 0; i-- {
-		testDomain = parts[i] + "." + testDomain
-		if server.IsAuthoritative(testDomain) {
-			authoritativeDomain = testDomain
-		}
-	}
-	return authoritativeDomain
 }
 
 // Obtain the highest domain for which we are authoritative
